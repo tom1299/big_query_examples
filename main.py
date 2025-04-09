@@ -40,8 +40,12 @@ def get_dataset(dataset_name):
 
 def create_dataset(dataset_name):
     dataset = bigquery.Dataset(dataset_name)
+    # Set default table expiration to 59 days (in seconds)
+    dataset.default_table_expiration_ms = 59 * 24 * 60 * 60 * 1000  # 59 days in milliseconds
+    # Set default partition expiration to 59 days (in seconds)
+    dataset.default_partition_expiration_ms = 59 * 24 * 60 * 60 * 1000  # 59 days in milliseconds
     dataset = BIG_QUERY_CLIENT.create_dataset(dataset, exists_ok=True)
-    print(f"Created dataset {dataset.dataset_id}")
+    print(f"Created dataset {dataset.dataset_id} with a default expiration of 59 days and partition expiration of 59 days")
 
 def delete_dataset(dataset_name):
     BIG_QUERY_CLIENT.delete_dataset(dataset_name, delete_contents=True)
@@ -52,22 +56,29 @@ def list_datasets():
     if not datasets:
         print("No datasets found.")
         return
-    for dataset in datasets:
-        print(f"Dataset ID: {dataset.dataset_id}")
+
+    page_token = None
+    while True:
+        response = BIG_QUERY_CLIENT.list_datasets(page_token=page_token)
+        for dataset in response:
+            print(f"Dataset ID: {dataset.dataset_id}")
+        page_token = response.next_page_token
+        if not page_token:
+            break
 
 def run_sql_query(query):
     query_job = BIG_QUERY_CLIENT.query(query)
-    results = query_job.result()
+    results = query_job.result(page_size=100)
     rows = list(results)
     if rows:
         headers = rows[0].keys()
         column_widths = {header: max(len(header), *(len(str(row[header])) for row in rows)) for header in headers}
-        
+
         # Print header
         header_row = " | ".join(header.ljust(column_widths[header]) for header in headers)
         print(header_row)
         print("-" * len(header_row))
-        
+
         # Print rows
         for row in rows:
             print(" | ".join(str(row[header]).ljust(column_widths[header]) for header in headers))
