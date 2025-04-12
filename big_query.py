@@ -7,6 +7,7 @@ from google.oauth2 import service_account
 from google.cloud import bigquery
 from google.api_core.exceptions import NotFound
 import random
+import os
 
 BIG_QUERY_CLIENT = None
 DATA_SET_NAME = "bqml_lab"
@@ -24,9 +25,9 @@ def main():
 
 def authenticate_with_gcp():
 
-    credentials = service_account.Credentials.from_service_account_file(
-        '/home/reuhl/git/github/big_query_examples/authentication/credentials.json'
-    )
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    credentials_path = os.path.join(script_dir, 'authentication', 'credentials.json')
+    credentials = service_account.Credentials.from_service_account_file(credentials_path)
     global BIG_QUERY_CLIENT
     BIG_QUERY_CLIENT = bigquery.Client(credentials=credentials)
 

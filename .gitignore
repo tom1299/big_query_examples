@@ -9,3 +9,6 @@ venv/
 .env
 
 authentication/credentials.json
+authentication/dataprep_token.json
+
+.vscode/
